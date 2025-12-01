@@ -12,12 +12,22 @@
 
 
 
-from src.logger import logging
-from src.exception import exceptions
-import sys
+# from src.logger import logging
+# from src.exception import exceptions
+# import sys
 
-try: 
-    1+'str'
-except Exception as e:
-    logging.info(e)
-    raise exceptions(e,sys) from e 
+# try: 
+#     1+'str'
+# except Exception as e:
+#     logging.info(e)
+#     raise exceptions(e,sys) from e 
+
+
+
+
+
+from src.pipline.training_pipeline import TrainPipeline
+
+pipeline = TrainPipeline()
+pipeline.run_pipeline()
+

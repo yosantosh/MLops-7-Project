@@ -47,6 +47,17 @@ def configure_logger():
 
 configure_logger()
 
+# Reduce overly-verbose third-party loggers (e.g. pymongo heartbeats)
+# Keep application logs at DEBUG but silence noisy libraries.
+for _name in (
+    "pymongo",
+    "pymongo.topology",
+    "pymongo.server_selection",
+    "pymongo.connection",
+    "pymongo.pool",
+):
+    logging.getLogger(_name).setLevel(logging.WARNING)
+
 
 
 
