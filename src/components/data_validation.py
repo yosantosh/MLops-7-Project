@@ -137,7 +137,7 @@ class DataValidation:
             # Save validation status and message to a JSON file
             validation_report = {
                 "validation_status": validation_status,
-                "message": validation_error_msg.strip()
+                "message": validation_error_msg.strip() if validation_error_msg else "Data validation successful."
             }
 
             with open(self.data_validation_config.validation_report_file_path, "w") as report_file:
