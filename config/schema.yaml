@@ -1,4 +1,7 @@
+#data validation schema file: below schema should be matched with the data incoming data.
+
 columns:
+  - _id: str
   - id: int
   - Gender: category
   - Age: int
