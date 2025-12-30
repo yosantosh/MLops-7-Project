@@ -23,6 +23,7 @@ class DataTransformation:
             self.data_ingestion_artifact = data_ingestion_artifact
             self.data_transformation_config = data_transformation_config
             self.data_validation_artifact = data_validation_artifact
+            self.data_validation_report_path = DataValidationConfig.validation_report_file_path
             self._schema_config = read_yaml_file(file_path=SCHEMA_FILE_PATH)
         except Exception as e:
             raise exceptions(e, sys)
@@ -182,3 +183,5 @@ class DataTransformation:
 
         except Exception as e:
             raise exceptions(e, sys) from e
+
+
