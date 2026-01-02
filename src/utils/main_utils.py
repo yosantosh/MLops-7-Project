@@ -23,7 +23,7 @@ def read_yaml_file(file_path: str) -> dict:
             return yaml.safe_load(yaml_file)
 
     except Exception as e:
-        raise exceptions(e, sys) from e
+        raise exceptions(e, sys) from e # type: ignore
 
 
 def write_yaml_file(file_path: str, content: object, replace: bool = False) -> None:
@@ -35,7 +35,7 @@ def write_yaml_file(file_path: str, content: object, replace: bool = False) -> N
         with open(file_path, "w") as file:
             yaml.dump(content, file)
     except Exception as e:
-        raise exceptions(e, sys) from e
+        raise exceptions(e, sys) from e # pyright: ignore[reportArgumentType]
 
 
 def load_object(file_path: str) -> object:

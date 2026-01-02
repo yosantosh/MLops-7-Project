@@ -49,9 +49,9 @@ DATA_VALIDATION_REPORT_FILE_NAME: str = "report.yaml"
 """
 Data Transformation ralated constant start with DATA_TRANSFORMATION VAR NAME
 """
-DATA_TRANSFORMATION_DIR_NAME: str = "data_transformation"
-DATA_TRANSFORMATION_TRANSFORMED_DATA_DIR: str = "transformed"
-DATA_TRANSFORMATION_TRANSFORMED_OBJECT_DIR: str = "transformed_object"
+DATA_TRANSFORMATION_DIR_NAME: str = "data_transformation"      
+DATA_TRANSFORMATION_TRANSFORMED_DATA_DIR: str = "transformed"   # this will be created under artifact dir
+DATA_TRANSFORMATION_TRANSFORMED_OBJECT_DIR: str = "transformed_object"  # this is also created under artifact dir, later by os..mkdire or something
 
 """
 MODEL TRAINER related constant start with MODEL_TRAINER var name
@@ -71,8 +71,8 @@ MIN_SAMPLES_SPLIT_RANDOM_STATE: int = 101
 """
 MODEL Evaluation related constants
 """
-MODEL_EVALUATION_CHANGED_THRESHOLD_SCORE: float = 0.02
-MODEL_BUCKET_NAME = "my-model-mlopsproj"
+MODEL_EVALUATION_CHANGED_THRESHOLD_SCORE: float = 0.02   # if new model get >0.02 performance then we will push else no 
+MODEL_BUCKET_NAME = "mlops-project7-stuffs"
 MODEL_PUSHER_S3_KEY = "model-registry"
 
 
