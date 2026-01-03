@@ -89,7 +89,7 @@ class SimpleStorageService:
         except Exception as e:
             raise exceptions(e, sys) from e
 
-    def get_file_object(self, filename: str, bucket_name: str) -> Union[List[object], object]:
+    def get_file_object(self, filename: str, bucket_name: str) -> Union[List[object], object, None]:
         """
         Retrieves the file object(s) from the specified bucket based on the filename.
 
@@ -98,13 +98,13 @@ class SimpleStorageService:
             bucket_name (str): The name of the S3 bucket.
 
         Returns:
-            Union[List[object], object]: The S3 file object or list of file objects.
+            Union[List[object], object, None]: The S3 file object, list of file objects, or None if not found.
         """
         logging.info("Entered the get_file_object method of SimpleStorageService class")
         try:
             bucket = self.get_bucket(bucket_name)
             file_objects = [file_object for file_object in bucket.objects.filter(Prefix=filename)]
-            func = lambda x: x[0] if len(x) == 1 else x
+            func = lambda x: x[0] if len(x) == 1 else (x if len(x) > 1 else None)
             file_objs = func(file_objects)
             logging.info("Exited the get_file_object method of SimpleStorageService class")
             return file_objs
@@ -126,6 +126,12 @@ class SimpleStorageService:
         try:
             model_file = model_dir + "/" + model_name if model_dir else model_name
             file_object = self.get_file_object(model_file, bucket_name)
+            if file_object is None:
+                raise Exception("Model file not found in S3 bucket")
+            if isinstance(file_object, list):
+                if len(file_object) == 0:
+                    raise Exception("No model files found in S3 bucket")
+                file_object = file_object[0]
             model_obj = self.read_object(file_object, decode=False)
             model = pickle.loads(model_obj)
             logging.info("Production model loaded from S3 bucket.")

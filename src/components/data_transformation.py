@@ -82,7 +82,7 @@ class DataTransformation:
     def _create_dummy_columns(self, df):
         """Create dummy variables for categorical features."""
         logging.info("Creating dummy variables for categorical features")
-        df = pd.get_dummies(df, drop_first=True)
+        df = pd.get_dummies(df, columns=['Gender', 'Vehicle_Age', 'Vehicle_Damage'], drop_first=True)
         return df
 
     def _rename_columns(self, df):

@@ -1,20 +1,20 @@
 from typing import Tuple
 import numpy as np
 
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from xgboost import XGBClassifier
 
 import sys
 from src.exception import exceptions
 from src.logger import logging 
 from src.utils.main_utils import load_numpy_array_data, load_object, save_object
-from src.entity.config_entity import ModelTrainerConfig
+from src.entity.config_entity import ModelTrainerConfig,XGB_config
 from src.entity.artifact_entity import DataTransformationArtifact,ModelTrainerArtifact,ClassificationMetricArtifact
 from src.entity.estimator import MyModel
 
 
 class ModelTrainer:
-    def __init__(self,data_transformation_artifact: DataTransformationArtifact,model_trainer_config: ModelTrainerConfig):
+    def __init__(self,data_transformation_artifact: DataTransformationArtifact,model_trainer_config: XGB_config):
         """
         Docstring for __init__
         
@@ -39,21 +39,35 @@ class ModelTrainer:
         """
 
         try:
-            logging.info("Training RandomForestClassifier model with specified hyperparameters in the src.entity.config_entity ModelTrainerConfig")
+            logging.info("Training XGBoost model with specified hyperparameters")
 
-            #splitting train & test
+            # splitting train & test
             X_train,y_train, X_test,y_test = train[:,:-1],train[:,-1],test[:,:-1],test[:,-1]
             logging.info("Train and Test data split is done")
 
             #initializing model object
-            model = RandomForestClassifier(
-                n_estimators=self.model_trainer_config._n_estimators,
-                min_samples_split = self.model_trainer_config._min_samples_split,
-                min_samples_leaf = self.model_trainer_config._min_samples_leaf,
-                max_depth = self.model_trainer_config._max_depth,
-                criterion = self.model_trainer_config._criterion,
-                random_state = self.model_trainer_config._random_state                
+            # model = RandomForestClassifier(
+            #     n_estimators=self.model_trainer_config._n_estimators,
+            #     min_samples_split = self.model_trainer_config._min_samples_split,
+            #     min_samples_leaf = self.model_trainer_config._min_samples_leaf,
+            #     max_depth = self.model_trainer_config._max_depth,
+            #     criterion = self.model_trainer_config._criterion,
+            #     random_state = self.model_trainer_config._random_state                
+            # )
+
+
+
+            model = XGBClassifier(
+                n_estimators=self.model_trainer_config.n_estimators,
+                max_depth=self.model_trainer_config.max_depth,
+                learning_rate=self.model_trainer_config.learning_rate,
+                objective=self.model_trainer_config.objective,
+                use_label_encoder=self.model_trainer_config.use_label_encoder,
+                eval_metric=self.model_trainer_config.eval_metric,
+                random_state=self.model_trainer_config.random_state,
+                verbosity=self.model_trainer_config.verbosity
             )
+	            
 
             logging.info("Fitting the model object with training data")
             model.fit(X_train,y_train)

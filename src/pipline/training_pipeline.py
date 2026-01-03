@@ -13,6 +13,7 @@ from src.entity.config_entity import (Data_Ingestion_config,
                                           DataValidationConfig,
                                           DataTransformationConfig,
                                           ModelTrainerConfig,
+                                          XGB_config,
                                           ModelEvaluationConfig,
                                           ModelPusherConfig
 )
@@ -31,7 +32,7 @@ class TrainPipeline:
         self.data_ingestion_config = Data_Ingestion_config()
         self.data_validation_config = DataValidationConfig()
         self.data_transformation_config = DataTransformationConfig()
-        self.model_trainer_config = ModelTrainerConfig()
+        self.model_trainer_config = XGB_config()
         self.model_evaluation_config = ModelEvaluationConfig()
         self.model_pusher_config = ModelPusherConfig()
 

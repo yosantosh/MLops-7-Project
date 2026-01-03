@@ -19,3 +19,6 @@ uvicorn
 jinja2
 imblearn
 -e .
+ xgboost
+
+ -e .

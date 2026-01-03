@@ -35,7 +35,25 @@ class MyModel:
             logging.info("Starting prediction process.")
 
             # Step 1: Apply scaling transformations using the pre-trained preprocessing object
-            transformed_feature = self.preprocessing_object.transform(dataframe)
+            try:
+                transformed_feature = self.preprocessing_object.transform(dataframe)
+            except ValueError as ve:
+                # Handle missing columns error by adding the missing columns with default values
+                msg = str(ve)
+                if "columns are missing" in msg:
+                    # extract set-like content: { 'col1', 'col2' }
+                    import re
+                    m = re.search(r"\{(.+)\}", msg)
+                    if m:
+                        cols = [c.strip().strip("'\" ") for c in m.group(1).split(',')]
+                        for c in cols:
+                            if c and c not in dataframe.columns:
+                                dataframe[c] = 0
+                        transformed_feature = self.preprocessing_object.transform(dataframe)
+                    else:
+                        raise
+                else:
+                    raise
 
             # Step 2: Perform prediction using the trained model
             logging.info("Using the trained model to get predictions")

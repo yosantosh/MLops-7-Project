@@ -56,6 +56,44 @@ class ModelTrainerConfig:
     _criterion = MIN_SAMPLES_SPLIT_CRITERION
     _random_state = MIN_SAMPLES_SPLIT_RANDOM_STATE
 
+
+@dataclass
+class MLP_config:
+    model_trainer_dir: str = os.path.join(training_pipeline_config.artifact_dir, MODEL_TRAINER_DIR_NAME)
+    trained_model_file_path: str = os.path.join(model_trainer_dir, MODEL_TRAINER_TRAINED_MODEL_DIR, MODEL_FILE_NAME)
+    expected_accuracy: float = MODEL_TRAINER_EXPECTED_SCORE
+    model_config_file_path: str = MODEL_TRAINER_MODEL_CONFIG_FILE_PATH
+
+    hidden_layer_sizes=(100,50)  # 1 hidden layer, 100 neurons
+    activation='relu'           # ReLU activation
+    solver='adam'               # Adam optimizer (usually best)
+    alpha=0.0001               # L2 regularization
+    batch_size='auto'          # Adaptive batch size
+    learning_rate='adaptive'   # Adaptive learning rate
+    max_iter=200               # Max iterations
+    random_state=42
+    early_stopping=True        # Stop if no improvement
+    validation_fraction=0.1    # Use 10% for validation
+    n_iter_no_change=10        # Stop after 10 iterations without improvement
+
+
+@dataclass
+class XGB_config:
+    model_trainer_dir: str = os.path.join(training_pipeline_config.artifact_dir, MODEL_TRAINER_DIR_NAME)
+    trained_model_file_path: str = os.path.join(model_trainer_dir, MODEL_TRAINER_TRAINED_MODEL_DIR, MODEL_FILE_NAME)
+    expected_accuracy: float = MODEL_TRAINER_EXPECTED_SCORE
+
+    # XGBoost hyperparameters (defaults can be overridden)
+    n_estimators: int = 150
+    max_depth: int = 7
+    learning_rate: float = 0.1
+    objective: str = 'binary:logistic'
+    use_label_encoder: bool = False
+    eval_metric: str = 'logloss'
+    random_state: int = 42
+    verbosity: int = 0
+
+
 @dataclass
 class ModelEvaluationConfig:
     changed_threshold_score: float = MODEL_EVALUATION_CHANGED_THRESHOLD_SCORE

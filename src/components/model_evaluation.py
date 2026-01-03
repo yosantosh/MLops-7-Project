@@ -114,13 +114,19 @@ class ModelEvaluation:
                 best_model_f1_score = f1_score(y, y_hat_best_model)
                 logging.info(f"F1_Score-Production Model: {best_model_f1_score}, F1_Score-New Trained Model: {trained_model_f1_score}")
             
-            # if the s3 bucket dont have any model then it we are assigning it to 0.
+            # if the s3 bucket don't have any model then assign base score 0
             tmp_best_model_score = 0 if best_model_f1_score is None else best_model_f1_score
-            result = EvaluateModelResponse(trained_model_f1_score=trained_model_f1_score,
-                                           best_model_f1_score=best_model_f1_score,
-                                           is_model_accepted=trained_model_f1_score > tmp_best_model_score,
-                                           difference=trained_model_f1_score - tmp_best_model_score
-                                           )
+            # compute improvement over best model
+            difference = trained_model_f1_score - tmp_best_model_score
+            # accept only if improvement is greater than configured threshold
+            is_accepted = difference > self.model_eval_config.changed_threshold_score
+
+            result = EvaluateModelResponse(
+                trained_model_f1_score=trained_model_f1_score,
+                best_model_f1_score=best_model_f1_score,
+                is_model_accepted=is_accepted,
+                difference=difference
+            )
             logging.info(f"Result: {result}")
             return result
 
