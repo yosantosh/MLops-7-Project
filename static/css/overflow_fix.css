@@ -1,0 +1,12 @@
+/* Black & Pink Fluid Glass Theme */
+
+#paste-preview {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.preview-table {
+    white-space: nowrap; /* Prevent wrapping inside cells to keep table structure */
+}
+
+/* ... existing styles ... */

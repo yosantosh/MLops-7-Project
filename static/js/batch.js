@@ -160,4 +160,92 @@ document.addEventListener('DOMContentLoaded', ()=>{
             }
         });
     }
+
+    // Simple training modal functionality
+    let eventSource = null;
+
+    function showTrainingModal() {
+        const modal = document.getElementById('training-modal');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        document.getElementById('training-logs').innerHTML = '<div class="log-entry">$ python demo.py</div>';
+    }
+
+    function hideTrainingModal() {
+        const modal = document.getElementById('training-modal');
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto';
+
+        if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+        }
+    }
+
+    function addLogLine(message) {
+        const logsDiv = document.getElementById('training-logs');
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
+        logEntry.textContent = message;
+        logsDiv.appendChild(logEntry);
+        logsDiv.scrollTop = logsDiv.scrollHeight;
+    }
+
+    function startTraining() {
+        if (eventSource) {
+            eventSource.close();
+        }
+
+        eventSource = new EventSource('/run-demo');
+
+        eventSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'log') {
+                    addLogLine(data.message);
+                } else if (data.type === 'complete') {
+                    addLogLine(data.message);
+                    if (data.status === 'success') {
+                        addLogLine('✅ Training completed successfully!');
+                    } else {
+                        addLogLine('❌ Training failed: ' + data.message);
+                    }
+                } else if (data.type === 'error') {
+                    addLogLine('❌ Error: ' + data.message);
+                }
+            } catch (e) {
+                addLogLine('Raw output: ' + event.data);
+            }
+        };
+
+        eventSource.onerror = function(event) {
+            addLogLine('❌ Connection error');
+            eventSource.close();
+            eventSource = null;
+        };
+    }
+
+    // Add event listener for the Train Model button
+    const trainModelBtn = document.getElementById('train-model-btn');
+    if (trainModelBtn) {
+        trainModelBtn.addEventListener('click', () => {
+            showTrainingModal();
+            startTraining();
+        });
+    }
+
+    // Close modal functionality
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', hideTrainingModal);
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('training-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'training-modal') {
+            hideTrainingModal();
+        }
+    });
 });
+

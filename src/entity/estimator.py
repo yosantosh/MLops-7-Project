@@ -9,8 +9,8 @@ from src.logger import logging
 
 class TargetValueMapping:
     def __init__(self):
-        self.yes:int = 0
-        self.no:int = 1
+        self.yes:int = 1
+        self.no:int = 0
     def _asdict(self):
         return self.__dict__
     def reverse_mapping(self):

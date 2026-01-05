@@ -99,6 +99,95 @@ async def trainRouteClient():
     except Exception as e:
         return Response(f"Error Occurred! {e}")
 
+# Route to run demo.py file with real-time logging
+@app.get("/run-demo")
+async def runDemo():
+    """
+    Endpoint to run the demo.py file for model training with real-time logging.
+    """
+    try:
+        import subprocess
+        import sys
+        import asyncio
+        from fastapi.responses import StreamingResponse
+        import logging
+
+        async def generate_logs():
+            try:
+                logging.info("Starting subprocess for demo.py")
+                # Create a queue to store log messages
+                queue = asyncio.Queue()
+
+                # Start the process
+                process = await asyncio.create_subprocess_exec(
+                    sys.executable, "demo.py",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    cwd="."
+                )
+                logging.info(f"Subprocess started with PID: {process.pid}")
+
+                # Send initial status
+                yield f"data: {{\"type\": \"status\", \"message\": \"Starting model training...\"}}\n\n"
+
+                # Function to read a stream and put lines into the queue
+                async def read_stream(stream, stream_type):
+                    while True:
+                        line = await stream.readline()
+                        if not line:
+                            break
+                        line_text = line.decode('utf-8').strip()
+                        if line_text:
+                            logging.info(f"[{stream_type}] {line_text}")
+                            # Put the formatted message into the queue
+                            await queue.put(f"data: {{\"type\": \"log\", \"stream\": \"{stream_type}\", \"message\": \"{line_text}\"}}\n\n")
+
+                # Create tasks for reading stdout and stderr
+                stdout_task = asyncio.create_task(read_stream(process.stdout, "stdout"))
+                stderr_task = asyncio.create_task(read_stream(process.stderr, "stderr"))
+
+                # Function to wait for streams to finish and signal completion
+                async def wait_for_streams():
+                    await asyncio.gather(stdout_task, stderr_task)
+                    await queue.put(None) # Signal that streams are done
+
+                # Start the waiter task
+                asyncio.create_task(wait_for_streams())
+
+                # Loop to yield messages from the queue
+                while True:
+                    message = await queue.get()
+                    if message is None:
+                        break
+                    yield message
+
+                # Wait for process to complete
+                return_code = await process.wait()
+                logging.info(f"Subprocess completed with return code: {return_code}")
+
+                if return_code == 0:
+                    yield f"data: {{\"type\": \"complete\", \"status\": \"success\", \"message\": \"Training completed successfully!\"}}\n\n"
+                else:
+                    yield f"data: {{\"type\": \"complete\", \"status\": \"error\", \"message\": \"Training failed with exit code {return_code}\"}}\n\n"
+
+            except Exception as e:
+                logging.error(f"Error in generate_logs: {str(e)}")
+                yield f"data: {{\"type\": \"error\", \"message\": \"Error: {str(e)}\"}}\n\n"
+
+        return StreamingResponse(
+            generate_logs(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Access-Control-Allow-Origin": "*",
+            }
+        )
+
+    except Exception as e:
+        logging.error(f"Error setting up training: {str(e)}")
+        return {"status": "error", "message": f"Error setting up training: {str(e)}"}
+
 # Route to handle form submission and make predictions
 @app.post("/")
 async def predictRouteClient(request: Request):
@@ -138,7 +227,7 @@ async def predictRouteClient(request: Request):
             label = mapping.get(int(value), 'no')
         except Exception:
             label = 'no'
-        status = "Response-Yes" if str(label).lower() == 'yes' else "Response-No"
+        status = "Yes" if str(label).lower() == 'yes' else "No"
 
         # Render the same HTML page with the prediction result
         return templates.TemplateResponse(
@@ -180,7 +269,7 @@ async def predict_api(request: Request):
             label = mapping.get(int(value), 'no')
         except Exception:
             label = 'no'
-        status = "Response-Yes" if str(label).lower() == 'yes' else "Response-No"
+        status = "Yes" if str(label).lower() == 'yes' else "No"
 
         return {"prediction": status}
         
@@ -292,7 +381,7 @@ async def predict_batch(request: Request):
                 lab = mapping.get(int(v), 'no')
             except Exception:
                 lab = 'no'
-            statuses.append("Response-Yes" if str(lab).lower() == 'yes' else "Response-No")
+            statuses.append("Yes" if str(lab).lower() == 'yes' else "No")
 
         if body.get("debug", False):
             return {"predictions": statuses, "debug": sample}

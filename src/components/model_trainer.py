@@ -2,7 +2,13 @@ from typing import Tuple
 import numpy as np
 
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-from xgboost import XGBClassifier
+
+try:
+    from xgboost import XGBClassifier
+    XGBOOST_AVAILABLE = True
+except ImportError:
+    XGBOOST_AVAILABLE = False
+    print("Warning: XGBoost not available. Model training may not work properly.")
 
 import sys
 from src.exception import exceptions
@@ -56,6 +62,9 @@ class ModelTrainer:
             # )
 
 
+
+            if not XGBOOST_AVAILABLE:
+                raise Exception("XGBoost is not available. Please install xgboost: pip install xgboost")
 
             model = XGBClassifier(
                 n_estimators=self.model_trainer_config.n_estimators,

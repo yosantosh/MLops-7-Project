@@ -16,77 +16,10 @@
             <div id="paste-preview" style="margin-top:14px;"></div>
         </div>
 
-        <form method="post" class="glass-form">
-            <div class="form-group">
-                <label for="Gender">Gender:</label>
-                <select name="Gender" id="Gender" required>
-                    <option value="">Select Gender</option>
-                    <option value="0">Female</option>
-                    <option value="1">Male</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="Age">Age:</label>
-                <input type="number" name="Age" id="Age" min="18" max="100" required>
-            </div>
-            <div class="form-group">
-                <label for="Driving_License">Driving License:</label>
-                <select name="Driving_License" id="Driving_License" required>
-                    <option value="">Select</option>
-                    <option value="0">No</option>
-                    <option value="1">Yes</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="Region_Code">Region Code:</label>
-                <input type="number" name="Region_Code" id="Region_Code" step="0.01" required>
-            </div>
-            <div class="form-group">
-                <label for="Previously_Insured">Previously Insured:</label>
-                <select name="Previously_Insured" id="Previously_Insured" required>
-                    <option value="">Select</option>
-                    <option value="0">No</option>
-                    <option value="1">Yes</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="Annual_Premium">Annual Premium:</label>
-                <input type="number" name="Annual_Premium" id="Annual_Premium" step="0.01" required>
-            </div>
-            <div class="form-group">
-                <label for="Policy_Sales_Channel">Policy Sales Channel:</label>
-                <input type="number" name="Policy_Sales_Channel" id="Policy_Sales_Channel" step="0.01" required>
-            </div>
-            <div class="form-group">
-                <label for="Vintage">Vintage (days):</label>
-                <input type="number" name="Vintage" id="Vintage" min="0" required>
-            </div>
-            <div class="form-group">
-                <label for="Vehicle_Age_lt_1_Year">Vehicle Age < 1 Year:</label>
-                <select name="Vehicle_Age_lt_1_Year" id="Vehicle_Age_lt_1_Year" required>
-                    <option value="">Select</option>
-                    <option value="0">No</option>
-                    <option value="1">Yes</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="Vehicle_Age_gt_2_Years">Vehicle Age > 2 Years:</label>
-                <select name="Vehicle_Age_gt_2_Years" id="Vehicle_Age_gt_2_Years" required>
-                    <option value="">Select</option>
-                    <option value="0">No</option>
-                    <option value="1">Yes</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="Vehicle_Damage_Yes">Vehicle Damage:</label>
-                <select name="Vehicle_Damage_Yes" id="Vehicle_Damage_Yes" required>
-                    <option value="">Select</option>
-                    <option value="0">No</option>
-                    <option value="1">Yes</option>
-                </select>
-            </div>
-            <button type="submit" class="submit-btn">Predict</button>
-        </form>
+        <!-- Manual form removed as per user request to focus on batch pasting -->
+        <h2 style="font-size: 1.2rem; color: var(--muted); margin-bottom: 20px;">Paste Excel/Sheets Data for Batch Prediction</h2>
+
+        <button id="train-model-btn" class="submit-btn" style="background-color: #4CAF50; margin-top: 10px;">Train Model</button>
         {% if context != "Rendering" %}
         <div class="result glass-card">
             <h2>Prediction Result</h2>
@@ -94,6 +27,23 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Simple Training Modal -->
+    <div id="training-modal" class="training-modal">
+        <div class="training-modal-content">
+            <div class="training-modal-header">
+                <h2>Model Training Logs</h2>
+                <p>Running demo.py...</p>
+            </div>
+
+            <div id="training-logs" class="training-logs" style="font-family: 'Courier New', monospace; font-size: 14px; color: #00ff88;">
+                <div class="log-entry">Starting training...</div>
+            </div>
+
+            <button id="close-modal-btn" class="close-modal-btn">Close</button>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', path='js/batch.js') }}"></script>
 </body>
 </html>
