@@ -9,11 +9,16 @@ from uvicorn import run as app_run
 
 from typing import Optional
 
+
+from src.pipline.training_pipeline import TrainPipeline
+
+
+
+
 # Importing constants and pipeline modules from the project
 from src.constants import APP_HOST, APP_PORT
 from src.pipline.prediction_pipeline import VehicleData, VehicleDataClassifier
 from src.entity.estimator import TargetValueMapping
-from src.pipline.training_pipeline import TrainPipeline
 from src.entity.s3_estimator import Proj1Estimator
 from src.entity.config_entity import VehiclePredictorConfig
 
@@ -99,11 +104,11 @@ async def trainRouteClient():
     except Exception as e:
         return Response(f"Error Occurred! {e}")
 
-# Route to run demo.py file with real-time logging
+# Route to run Train.py file with real-time logging
 @app.get("/run-demo")
 async def runDemo():
     """
-    Endpoint to run the demo.py file for model training with real-time logging.
+    Endpoint to run the Train.py file for model training with real-time logging.
     """
     try:
         import subprocess
@@ -114,13 +119,13 @@ async def runDemo():
 
         async def generate_logs():
             try:
-                logging.info("Starting subprocess for demo.py")
+                logging.info("Starting subprocess for Train.py")
                 # Create a queue to store log messages
                 queue = asyncio.Queue()
 
                 # Start the process
                 process = await asyncio.create_subprocess_exec(
-                    sys.executable, "demo.py",
+                    sys.executable, "Train.py",
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                     cwd="."

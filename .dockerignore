@@ -1,10 +1,8 @@
 Artifacts
 .gitignore
 logs
-demp.py
 README.md
 LICENSE
 src.egg-info
 Notes_workflow.ipynb
 test_batch.py
-    
