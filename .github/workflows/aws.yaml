@@ -56,10 +56,14 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       
-      - name: Run docker image to serve users                                                                                                                                                            # mongo db url for data ingestion and train the model from web UI Train the model button
-        run:
-          docker run -d -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} -e AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} -e MONGODB_URL="${{ secrets.MONGODB_URL }}" -p 5000:5000 "${{ steps.login-ecr.outputs.registry }}"/"${{ secrets.ECR_REPO }}":latest
-                                                                                                                                                                                                                                              # post mapping ---> Our applicationi is exposed on 5000 port of docker now map this port with asw EC2 500 port.
+      - name: Clean previous images and containers
+        run: |
+          docker stop mlproj || true
+          docker rm mlproj || true
+
+      - name: Run docker image to serve users
+        run: |
+          docker run -d -p 5000:5000 --name=mlproj -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" -e AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" -e MONGODB_URL="${{ secrets.MONGODB_URL }}" "${{ steps.login-ecr.outputs.registry }}"/"${{ secrets.ECR_REPO }}":latest
           
 
                     
