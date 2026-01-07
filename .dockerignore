@@ -1,0 +1,10 @@
+Artifacts
+.gitignore
+logs
+templates
+demp.py
+README.md
+LICENSE
+src.egg-info
+Notes_workflow.ipynb
+test_batch.py
