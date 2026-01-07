@@ -60,6 +60,9 @@ jobs:
         run: |
           docker stop mlproj || true
           docker rm mlproj || true
+          # Force kill any container occupying port 5000 (handles old/unnamed containers)
+          docker ps -q --filter "publish=5000" | xargs -r docker stop
+          docker ps -a -q --filter "publish=5000" | xargs -r docker rm
 
       - name: Run docker image to serve users
         run: |
