@@ -135,11 +135,11 @@ class TrainPipeline:
         This method of TrainPipeline class is responsible for running complete pipeline
         """
         try:
-            # data_ingestion_artifact = self.start_data_ingestion()   # i dont wantt to run data validation everytime i run this pipeline thats why below code for data_ingestion_artifact works
-            data_ingestion_artifact = Data_Ingestion_artifact(
-                training_file_path=self.data_ingestion_config.training_file_path,
-                test_file_path=self.data_ingestion_config.testing_file_path
-            )
+            data_ingestion_artifact = self.start_data_ingestion()   # i dont wantt to run data validation everytime i run this pipeline thats why below code for data_ingestion_artifact works
+            # data_ingestion_artifact = Data_Ingestion_artifact(
+            #     training_file_path=self.data_ingestion_config.training_file_path,
+            #     test_file_path=self.data_ingestion_config.testing_file_path
+            # )
             data_validation_artifact = self.start_data_validation(data_ingestion_artifact=data_ingestion_artifact)
             data_transformation_artifact = self.start_data_transformation(
                 data_ingestion_artifact=data_ingestion_artifact, data_validation_artifact=data_validation_artifact)
