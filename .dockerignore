@@ -1,7 +1,6 @@
 Artifacts
 .gitignore
 logs
-templates
 demp.py
 README.md
 LICENSE

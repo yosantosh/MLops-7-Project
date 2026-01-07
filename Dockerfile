@@ -1,5 +1,4 @@
-# using light-weight python image for docker
-FROM python:3.13.11-slim      
+FROM python:3.11-slim      
 
 # create app directory
 WORKDIR /app
