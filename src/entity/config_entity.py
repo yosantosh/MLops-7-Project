@@ -78,20 +78,18 @@ class MLP_config:
 
 
 @dataclass
-class XGB_config:
+class RandomForestConfig:
     model_trainer_dir: str = os.path.join(training_pipeline_config.artifact_dir, MODEL_TRAINER_DIR_NAME)
     trained_model_file_path: str = os.path.join(model_trainer_dir, MODEL_TRAINER_TRAINED_MODEL_DIR, MODEL_FILE_NAME)
     expected_accuracy: float = MODEL_TRAINER_EXPECTED_SCORE
 
-    # XGBoost hyperparameters (defaults can be overridden)
-    n_estimators: int = 150
-    max_depth: int = 7
-    learning_rate: float = 0.1
-    objective: str = 'binary:logistic'
-    use_label_encoder: bool = False
-    eval_metric: str = 'logloss'
-    random_state: int = 42
-    verbosity: int = 0
+    # Random Forest hyperparameters
+    n_estimators: int = 200
+    min_samples_split: int = 7
+    min_samples_leaf: int = 6
+    max_depth: int = 10
+    criterion: str = 'entropy'
+    random_state: int = 101
 
 
 @dataclass
@@ -104,6 +102,27 @@ class ModelEvaluationConfig:
 class ModelPusherConfig:
     bucket_name: str = MODEL_BUCKET_NAME
     s3_model_key_path: str = MODEL_FILE_NAME
+
+@dataclass
+class XGBoostConfig:
+    model_trainer_dir: str = os.path.join(training_pipeline_config.artifact_dir, MODEL_TRAINER_DIR_NAME)
+    trained_model_file_path: str = os.path.join(model_trainer_dir, MODEL_TRAINER_TRAINED_MODEL_DIR, MODEL_FILE_NAME)
+    expected_accuracy: float = MODEL_TRAINER_EXPECTED_SCORE
+
+    # XGBoost hyperparameters
+    learning_rate: float = 0.1
+    n_estimators: int = 100
+    max_depth: int = 6
+    min_child_weight: int = 1
+    gamma: float = 0
+    subsample: float = 0.8
+    colsample_bytree: float = 0.8
+    objective: str = 'binary:logistic'
+    nthread: int = 4
+    scale_pos_weight: int = 1
+    seed: int = 27
+    random_state: int = 42
+
 
 @dataclass
 class VehiclePredictorConfig:

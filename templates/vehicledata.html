@@ -1,49 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vehicle Insurance Prediction</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}?v=3">
 </head>
+
 <body>
     <div class="container">
         <h1>Vehicle Insurance Response Prediction</h1>
 
-        <div class="glass-form" style="margin-bottom:18px; text-align:left;">
-            <label for="paste-area">Paste table from Excel (Ctrl+V) here:</label>
-            <textarea id="paste-area" placeholder="Paste spreadsheet cells copied from Excel or Google Sheets" rows="4" style="width:100%; padding:12px; border-radius:8px; background:transparent; border:1px solid rgba(255,255,255,0.04); color:#fff;"></textarea>
-            <div id="paste-preview" style="margin-top:14px;"></div>
+        <div class="glass-card" style="padding: 0;">
+            <div id="data-table-container" style="max-height: 60vh;">
+                <!-- Table will be rendered here by JS -->
+            </div>
+
+            <div class="preview-actions" style="padding: 24px; border-top: 1px solid var(--panel-border);">
+                <button id="add-row-btn" class="secondary-btn" style="padding: 12px 24px;">+ Add Row</button>
+                <div style="flex:1"></div>
+                <button id="predict-btn" class="submit-btn" style="width: auto; padding: 12px 32px;">Predict
+                    All</button>
+                <button id="download-btn" class="secondary-btn" style="display:none; margin-left: 12px;">Download
+                    CSV</button>
+            </div>
         </div>
 
-        <!-- Manual form removed as per user request to focus on batch pasting -->
-        <h2 style="font-size: 1.2rem; color: var(--muted); margin-bottom: 20px;">Paste Excel/Sheets Data for Batch Prediction</h2>
-
-        <button id="train-model-btn" class="submit-btn" style="background-color: #4CAF50; margin-top: 10px;">Train Model</button>
-        {% if context != "Rendering" %}
-        <div class="result glass-card">
-            <h2>Prediction Result</h2>
-            <p>{{ context }}</p>
+        <div style="margin-top: 48px;">
+            <button id="train-model-btn" class="secondary-btn" style="font-size: 0.9rem; padding: 12px 24px;">
+                Admin: Train Model
+            </button>
         </div>
-        {% endif %}
     </div>
 
-    <!-- Simple Training Modal -->
+    <!-- Training Modal -->
     <div id="training-modal" class="training-modal">
         <div class="training-modal-content">
             <div class="training-modal-header">
                 <h2>Model Training Logs</h2>
-                <p>Running demo.py...</p>
+                <p>Running training pipeline...</p>
             </div>
 
-            <div id="training-logs" class="training-logs" style="font-family: 'Courier New', monospace; font-size: 14px; color: #00ff88;">
-                <div class="log-entry">Starting training...</div>
+            <div id="training-logs" class="training-logs">
+                <div class="log-entry">Ready to start training...</div>
             </div>
 
-            <button id="close-modal-btn" class="close-modal-btn">Close</button>
+            <button id="close-modal-btn" class="close-modal-btn">Close Console</button>
         </div>
     </div>
 
     <script src="{{ url_for('static', path='js/batch.js') }}"></script>
 </body>
+
 </html>

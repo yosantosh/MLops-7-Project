@@ -1,251 +1,348 @@
-// Batch paste, preview table, send to /predict_batch and download CSV
+// Unified Batch Prediction Logic with Manual and Paste Support
 
-function detectDelimiter(line){
-    if(line.indexOf('\t') !== -1) return '\t';
-    if(line.indexOf(',') !== -1) return ',';
-    return '\t';
-}
+document.addEventListener('DOMContentLoaded', () => {
+    const tableContainer = document.getElementById('data-table-container');
+    const TABLE_ID = 'unified-input-table';
+    const BODY_ID = 'table-body';
 
-function parseClipboardText(text){
-    const lines = text.trim().split(/\r?\n/).filter(l=>l.trim().length>0);
-    if(lines.length === 0) return {headers:[], rows:[]};
+    // Config
+    const headers = [
+        'Gender', 'Age', 'Driving_License', 'Region_Code', 'Previously_Insured',
+        'Annual_Premium', 'Policy_Sales_Channel', 'Vintage',
+        'Vehicle_Age', 'Vehicle_Damage'
+    ];
 
-    const delim = detectDelimiter(lines[0]);
-    const first = lines[0].split(delim).map(h=>h.trim());
+    // Initial Render
+    renderTableStructure();
 
-    // Heuristic: treat first row as header when any cell contains non-numeric or matches known feature names
-    const known = ['Gender','Age','Driving_License','Region_Code','Previously_Insured','Annual_Premium','Policy_Sales_Channel','Vintage','Vehicle_Age_lt_1_Year','Vehicle_Age_gt_2_Years','Vehicle_Damage_Yes'];
-    const firstIsHeader = first.some(h => isNaN(h)) || first.some(h=> known.includes(h));
+    // Global Paste Listener (Capture paste anywhere on the page, or scoped to table)
+    document.addEventListener('paste', handlePaste);
 
-    let headers = [];
-    let dataLines = [];
-    if(firstIsHeader){
-        headers = first;
-        dataLines = lines.slice(1);
-    } else {
-        // generate headers
-        const cols = first.length;
-        headers = Array.from({length:cols},(_,i)=>`Col_${i+1}`);
-        dataLines = lines;
+    // Button Listeners
+    const addRowBtn = document.getElementById('add-row-btn');
+    if (addRowBtn) addRowBtn.addEventListener('click', () => addRow());
+
+    const predictBtn = document.getElementById('predict-btn');
+    if (predictBtn) predictBtn.addEventListener('click', () => handlePredict(predictBtn));
+
+    // --- Core Functions ---
+
+    function renderTableStructure() {
+        if (!tableContainer) return;
+
+        const table = document.createElement('table');
+        table.className = 'preview-table';
+        table.id = TABLE_ID;
+
+        // Header
+        const thead = document.createElement('thead');
+        const trh = document.createElement('tr');
+        headers.forEach(h => {
+            const th = document.createElement('th');
+            th.textContent = h.replace(/_/g, ' ');
+            trh.appendChild(th);
+        });
+
+        // Prediction Column
+        const thPred = document.createElement('th');
+        thPred.textContent = 'Prediction';
+        thPred.style.color = 'var(--accent-2)';
+        trh.appendChild(thPred);
+
+        // Action Column
+        const thAction = document.createElement('th');
+        trh.appendChild(thAction);
+
+        thead.appendChild(trh);
+        table.appendChild(thead);
+
+        // Body
+        const tbody = document.createElement('tbody');
+        tbody.id = BODY_ID;
+        table.appendChild(tbody);
+        tableContainer.innerHTML = '';
+        tableContainer.appendChild(table);
+
+        // Add initial empty row
+        addRow();
     }
 
-    const rows = dataLines.map(line => line.split(delim).map(cell=>cell.trim()));
-    return {headers, rows};
-}
-
-function renderPreview(headers, rows){
-    const container = document.getElementById('paste-preview');
-    container.innerHTML = '';
-    const table = document.createElement('table');
-    table.className = 'preview-table';
-    const thead = document.createElement('thead');
-    const trh = document.createElement('tr');
-    headers.forEach(h=>{
-        const th = document.createElement('th'); th.textContent = h; trh.appendChild(th);
-    });
-    trh.appendChild(document.createElement('th')).textContent = 'Prediction';
-    thead.appendChild(trh);
-    table.appendChild(thead);
-    const tbody = document.createElement('tbody');
-    rows.forEach(r=>{
+    function addRow(data = null) {
+        const tbody = document.getElementById(BODY_ID);
         const tr = document.createElement('tr');
-        headers.forEach((_,i)=>{
+
+        headers.forEach((h, i) => {
             const td = document.createElement('td');
+            // Make cell editable
             td.contentEditable = 'true';
-            td.textContent = r[i] !== undefined ? r[i] : '';
+            td.spellcheck = false;
+
+            // Set data if provided, else empty
+            td.textContent = (data && data[i] !== undefined) ? data[i] : '';
+
+            // Basic styling on blur/focus
+            td.addEventListener('blur', () => {
+                if (td.textContent.trim() !== '') td.style.background = 'rgba(255,255,255,0.05)';
+                else td.style.background = '';
+            });
+
+            td.addEventListener('focus', () => {
+                td.style.background = 'var(--accent-soft)';
+            });
+
             tr.appendChild(td);
         });
-        const predTd = document.createElement('td'); predTd.textContent = ''; tr.appendChild(predTd);
+
+        // Prediction Cell (Read-only)
+        const predTd = document.createElement('td');
+        predTd.className = 'pred-cell';
+        predTd.style.fontWeight = 'bold';
+        tr.appendChild(predTd);
+
+        // Remove Button
+        const actionTd = document.createElement('td');
+        actionTd.style.textAlign = 'center';
+        const delBtn = document.createElement('button');
+        delBtn.innerHTML = '&times;';
+        delBtn.title = 'Remove Row';
+        delBtn.style.background = 'transparent';
+        delBtn.style.border = 'none';
+        delBtn.style.color = 'rgba(255,255,255,0.4)';
+        delBtn.style.fontSize = '1.2rem';
+        delBtn.style.cursor = 'pointer';
+        delBtn.onclick = () => {
+            if (tbody.children.length > 1) tr.remove();
+            else {
+                // If it's the last row, just clear content
+                Array.from(tr.querySelectorAll('td[contenteditable]')).forEach(td => td.textContent = '');
+                tr.querySelector('.pred-cell').textContent = '';
+                tr.querySelector('.pred-cell').className = 'pred-cell';
+            }
+        };
+        actionTd.appendChild(delBtn);
+        tr.appendChild(actionTd);
+
         tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    container.appendChild(table);
+    }
 
-    const actions = document.createElement('div'); actions.className = 'preview-actions';
-    const predictBtn = document.createElement('button'); predictBtn.textContent = 'Predict All'; predictBtn.className='submit-btn';
-    const downloadBtn = document.createElement('button'); downloadBtn.textContent = 'Download CSV'; downloadBtn.className='submit-btn'; downloadBtn.style.marginLeft='10px'; downloadBtn.style.display='none';
-    actions.appendChild(predictBtn); actions.appendChild(downloadBtn);
-    container.appendChild(actions);
+    function handlePaste(e) {
+        // Prevent default paste behavior if we are inside the table or body
+        const clipboardData = (e.clipboardData || window.clipboardData).getData('text');
+        if (!clipboardData) return;
 
-    predictBtn.addEventListener('click', async ()=>{
-        predictBtn.disabled = true; predictBtn.textContent = 'Predicting...';
-        const tableRows = Array.from(tbody.querySelectorAll('tr'));
-        const objects = tableRows.map(tr=>{
-            const cols = Array.from(tr.querySelectorAll('td'));
-            const obj = {};
-            headers.forEach((h,i)=>{
-                let v = cols[i].textContent.trim();
-                // try convert numeric
-                if(v!=='' && !isNaN(v)) v = Number(v);
-                obj[h] = v;
-            });
-            return obj;
+        // Parse data
+        const { rows } = parseCSV(clipboardData);
+        if (rows.length === 0) return;
+
+        e.preventDefault();
+
+        const selection = window.getSelection();
+        let targetRow = null;
+        let targetCellIndex = 0;
+
+        if (selection.rangeCount > 0) {
+            const anchor = selection.anchorNode;
+            const cell = anchor.nodeType === 3 ? anchor.parentElement : anchor;
+            if (cell.tagName === 'TD' && cell.closest('table').id === TABLE_ID) {
+                targetRow = cell.parentElement;
+                targetCellIndex = Array.from(targetRow.children).indexOf(cell);
+            }
+        }
+
+        const tbody = document.getElementById(BODY_ID);
+        let currentRow = targetRow;
+
+        if (!currentRow) {
+            const allRows = Array.from(tbody.children);
+            const isFirstRowEmpty = allRows.length === 1 && isEmptyRow(allRows[0]);
+
+            if (isFirstRowEmpty) {
+                tbody.innerHTML = '';
+            }
+        }
+
+        rows.forEach((rowData, rIdx) => {
+            if (currentRow) {
+                const cells = currentRow.querySelectorAll('td[contenteditable]');
+                rowData.forEach((val, cIdx) => {
+                    const effectiveIdx = targetCellIndex + cIdx;
+                    if (effectiveIdx < cells.length) {
+                        cells[effectiveIdx].textContent = val;
+                    }
+                });
+                currentRow = currentRow.nextElementSibling;
+            } else {
+                addRow(rowData);
+            }
+        });
+    }
+
+    function parseCSV(text) {
+        const lines = text.trim().split(/\r?\n/).filter(l => l.trim().length > 0);
+        if (lines.length === 0) return { rows: [] };
+
+        const firstLine = lines[0];
+        const delim = (firstLine.indexOf('\t') !== -1) ? '\t' : ',';
+
+        const dataRows = lines.map(line => {
+            return line.split(delim).map(c => c.trim().replace(/^"|"$/g, ''));
         });
 
-        try{
-            const resp = await fetch('/predict_batch',{
-                method:'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({rows: objects})
-            });
-            const data = await resp.json();
-            if(data.error){ alert('Error: '+data.error); predictBtn.disabled=false; predictBtn.textContent='Predict All'; return; }
-            const preds = data.predictions || [];
-            tableRows.forEach((tr,idx)=>{
-                const predCell = tr.querySelectorAll('td')[headers.length];
-                predCell.textContent = preds[idx] || '';
-                predCell.style.color = preds[idx] === 'Response-Yes' ? '#ffb0d9' : '#ff7aa0';
-            });
-            downloadBtn.style.display = 'inline-block';
-            predictBtn.textContent = 'Done';
-        }catch(err){ alert('Error: '+err.message); }
-        finally{ predictBtn.disabled = false; }
-    });
+        return { rows: dataRows };
+    }
 
-    downloadBtn.addEventListener('click', ()=>{
-        // compose CSV from table
-        const rowsOut = [];
-        const headerRow = headers.concat(['Prediction']);
-        rowsOut.push(headerRow.join(','));
-        const tableRows = Array.from(tbody.querySelectorAll('tr'));
-        tableRows.forEach(tr=>{
-            const cols = Array.from(tr.querySelectorAll('td')).map(td=> '"'+td.textContent.replace(/"/g,'""')+'"');
-            rowsOut.push(cols.join(','));
+    function isEmptyRow(tr) {
+        return Array.from(tr.querySelectorAll('td[contenteditable]')).every(td => td.textContent.trim() === '');
+    }
+
+    async function handlePredict(btn) {
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = 'Processing...';
+
+        const tbody = document.getElementById(BODY_ID);
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        const dataPayload = [];
+        const validRowsIndices = [];
+
+        rows.forEach((tr, idx) => {
+            if (isEmptyRow(tr)) return;
+
+            const cells = tr.querySelectorAll('td[contenteditable]');
+            const rowObj = {};
+
+            headers.forEach((h, i) => {
+                rowObj[h] = cells[i].textContent.trim();
+            });
+
+            dataPayload.push(rowObj);
+            validRowsIndices.push(idx);
         });
-        const csv = rowsOut.join('\n');
-        const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+
+        if (dataPayload.length === 0) {
+            alert('Please enter data into the table first.');
+            btn.disabled = false;
+            btn.textContent = originalText;
+            return;
+        }
+
+        try {
+            const resp = await fetch('/predict_batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rows: dataPayload })
+            });
+
+            const result = await resp.json();
+
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            const predictions = result.predictions || [];
+
+            // Update UI
+            validRowsIndices.forEach((rowIndex, i) => {
+                const tr = rows[rowIndex];
+                const p = predictions[i];
+                const pCell = tr.querySelector('.pred-cell');
+
+                pCell.textContent = p;
+
+                // Clear previous classes
+                pCell.classList.remove('prediction-yes', 'prediction-no');
+
+                if (p === 'Yes') {
+                    pCell.classList.add('prediction-yes');
+                } else if (p === 'No') {
+                    pCell.classList.add('prediction-no');
+                }
+
+                pCell.classList.add('updated');
+                setTimeout(() => pCell.classList.remove('updated'), 1000);
+            });
+
+            const dlBtn = document.getElementById('download-btn');
+            if (dlBtn) {
+                dlBtn.style.display = 'inline-block';
+                dlBtn.onclick = () => downloadCSV(headers, rows);
+            }
+
+        } catch (err) {
+            console.error(err);
+            alert('Prediction failed: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
+    function downloadCSV(headers, rows) {
+        const csvContent = [];
+        csvContent.push([...headers, 'Prediction'].join(','));
+
+        rows.forEach(tr => {
+            if (isEmptyRow(tr)) return;
+
+            const rowData = [];
+            const cells = tr.querySelectorAll('td[contenteditable]');
+            cells.forEach(td => rowData.push(`"${td.textContent.replace(/"/g, '""')}"`));
+
+            const pCell = tr.querySelector('.pred-cell');
+            rowData.push(`"${pCell.textContent}"`);
+
+            csvContent.push(rowData.join(','));
+        });
+
+        const blob = new Blob([csvContent.join('\n')], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'predictions.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'vehicle_insurance_predictions.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+});
+
+// Admin/Demo Training Modal Logic
+const trainModelBtn = document.getElementById('train-model-btn');
+if (trainModelBtn) {
+    trainModelBtn.addEventListener('click', () => {
+        const modal = document.getElementById('training-modal');
+        if (modal) {
+            modal.classList.add('show');
+            startDemoTraining();
+        }
     });
 }
 
-// Hook paste textarea
-document.addEventListener('DOMContentLoaded', ()=>{
-    const pasteArea = document.getElementById('paste-area');
-    if(pasteArea){
-        pasteArea.addEventListener('paste', (e)=>{
-            const text = (e.clipboardData || window.clipboardData).getData('text');
-            if(!text) return;
-            e.preventDefault();
-            const {headers, rows} = parseClipboardText(text);
-            renderPreview(headers, rows);
-        });
-    }
+function startDemoTraining() {
+    const logsDiv = document.getElementById('training-logs');
+    if (!logsDiv) return;
+    logsDiv.innerHTML = '<div class="log-entry">$ python demo.py</div>';
 
-    // also include existing single-form handler if present
-    const form = document.getElementById('prediction-form');
-    if(form){
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData);
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams(data),
-                });
-                const result = await response.json();
-                if (result.prediction) {
-                    const resultText = document.getElementById('result-text');
-                    if(resultText) resultText.textContent = result.prediction;
-                    const resEl = document.getElementById('result'); if(resEl) resEl.style.display='block';
-                } else if (result.error) {
-                    alert('Error: ' + result.error);
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
+    let eventSource = new EventSource('/run-demo');
+    eventSource.onmessage = function (event) {
+        try {
+            const data = JSON.parse(event.data);
+            const line = document.createElement('div');
+            line.className = 'log-entry';
+
+            if (data.type === 'log') line.textContent = data.message;
+            else if (data.type === 'complete') line.textContent = `[${data.status.toUpperCase()}] ${data.message}`;
+            else if (data.type === 'error') line.textContent = `Error: ${data.message}`;
+
+            logsDiv.appendChild(line);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+
+            if (data.type === 'complete' || data.type === 'error') {
+                eventSource.close();
             }
-        });
-    }
+        } catch (e) { }
+    };
+}
 
-    // Simple training modal functionality
-    let eventSource = null;
-
-    function showTrainingModal() {
-        const modal = document.getElementById('training-modal');
-        modal.classList.add('show');
-        document.body.style.overflow = 'hidden';
-        document.getElementById('training-logs').innerHTML = '<div class="log-entry">$ python demo.py</div>';
-    }
-
-    function hideTrainingModal() {
-        const modal = document.getElementById('training-modal');
-        modal.classList.remove('show');
-        document.body.style.overflow = 'auto';
-
-        if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-        }
-    }
-
-    function addLogLine(message) {
-        const logsDiv = document.getElementById('training-logs');
-        const logEntry = document.createElement('div');
-        logEntry.className = 'log-entry';
-        logEntry.textContent = message;
-        logsDiv.appendChild(logEntry);
-        logsDiv.scrollTop = logsDiv.scrollHeight;
-    }
-
-    function startTraining() {
-        if (eventSource) {
-            eventSource.close();
-        }
-
-        eventSource = new EventSource('/run-demo');
-
-        eventSource.onmessage = function(event) {
-            try {
-                const data = JSON.parse(event.data);
-
-                if (data.type === 'log') {
-                    addLogLine(data.message);
-                } else if (data.type === 'complete') {
-                    addLogLine(data.message);
-                    if (data.status === 'success') {
-                        addLogLine('✅ Training completed successfully!');
-                    } else {
-                        addLogLine('❌ Training failed: ' + data.message);
-                    }
-                } else if (data.type === 'error') {
-                    addLogLine('❌ Error: ' + data.message);
-                }
-            } catch (e) {
-                addLogLine('Raw output: ' + event.data);
-            }
-        };
-
-        eventSource.onerror = function(event) {
-            addLogLine('❌ Connection error');
-            eventSource.close();
-            eventSource = null;
-        };
-    }
-
-    // Add event listener for the Train Model button
-    const trainModelBtn = document.getElementById('train-model-btn');
-    if (trainModelBtn) {
-        trainModelBtn.addEventListener('click', () => {
-            showTrainingModal();
-            startTraining();
-        });
-    }
-
-    // Close modal functionality
-    const closeModalBtn = document.getElementById('close-modal-btn');
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', hideTrainingModal);
-    }
-
-    // Close modal when clicking outside
-    document.getElementById('training-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'training-modal') {
-            hideTrainingModal();
-        }
-    });
-});
-
+const closeBtn = document.getElementById('close-modal-btn');
+if (closeBtn) closeBtn.onclick = () => document.getElementById('training-modal').classList.remove('show');

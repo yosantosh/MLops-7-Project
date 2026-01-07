@@ -3,24 +3,19 @@ import numpy as np
 
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
-try:
-    from xgboost import XGBClassifier
-    XGBOOST_AVAILABLE = True
-except ImportError:
-    XGBOOST_AVAILABLE = False
-    print("Warning: XGBoost not available. Model training may not work properly.")
+from xgboost import XGBClassifier
 
 import sys
 from src.exception import exceptions
 from src.logger import logging 
 from src.utils.main_utils import load_numpy_array_data, load_object, save_object
-from src.entity.config_entity import ModelTrainerConfig,XGB_config
+from src.entity.config_entity import ModelTrainerConfig, XGBoostConfig
 from src.entity.artifact_entity import DataTransformationArtifact,ModelTrainerArtifact,ClassificationMetricArtifact
 from src.entity.estimator import MyModel
 
 
 class ModelTrainer:
-    def __init__(self,data_transformation_artifact: DataTransformationArtifact,model_trainer_config: XGB_config):
+    def __init__(self,data_transformation_artifact: DataTransformationArtifact,model_trainer_config: XGBoostConfig):
         """
         Docstring for __init__
         
@@ -28,7 +23,7 @@ class ModelTrainer:
         :param data_transformation_artifact: Reference of Data Transformation stage completion.
         :type data_transformation_artifact: DataTransformationArtifact
         :param model_trainer_config: Stored config/variables for model trainer stage
-        :type model_trainer_config: ModelTrainerConfig
+        :type model_trainer_config: XGBoostConfig
         """
 
         self.data_transformation_artifact = data_transformation_artifact
@@ -52,29 +47,19 @@ class ModelTrainer:
             logging.info("Train and Test data split is done")
 
             #initializing model object
-            # model = RandomForestClassifier(
-            #     n_estimators=self.model_trainer_config._n_estimators,
-            #     min_samples_split = self.model_trainer_config._min_samples_split,
-            #     min_samples_leaf = self.model_trainer_config._min_samples_leaf,
-            #     max_depth = self.model_trainer_config._max_depth,
-            #     criterion = self.model_trainer_config._criterion,
-            #     random_state = self.model_trainer_config._random_state                
-            # )
-
-
-
-            if not XGBOOST_AVAILABLE:
-                raise Exception("XGBoost is not available. Please install xgboost: pip install xgboost")
-
             model = XGBClassifier(
-                n_estimators=self.model_trainer_config.n_estimators,
-                max_depth=self.model_trainer_config.max_depth,
-                learning_rate=self.model_trainer_config.learning_rate,
-                objective=self.model_trainer_config.objective,
-                use_label_encoder=self.model_trainer_config.use_label_encoder,
-                eval_metric=self.model_trainer_config.eval_metric,
-                random_state=self.model_trainer_config.random_state,
-                verbosity=self.model_trainer_config.verbosity
+                learning_rate = self.model_trainer_config.learning_rate,
+                n_estimators = self.model_trainer_config.n_estimators,
+                max_depth = self.model_trainer_config.max_depth,
+                min_child_weight = self.model_trainer_config.min_child_weight,
+                gamma = self.model_trainer_config.gamma,
+                subsample = self.model_trainer_config.subsample,
+                colsample_bytree = self.model_trainer_config.colsample_bytree,
+                objective = self.model_trainer_config.objective,
+                nthread = self.model_trainer_config.nthread,
+                scale_pos_weight = self.model_trainer_config.scale_pos_weight,
+                seed = self.model_trainer_config.seed,
+                random_state = self.model_trainer_config.random_state
             )
 	            
 
